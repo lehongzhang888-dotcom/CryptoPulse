@@ -17,22 +17,41 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Setup Gradle
+      - name: Setup Gradle 8.5
         uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.5'
 
-      - name: Generate Keystore
-        working-directory: android/app
+      - name: Generate Gradle Wrapper
+        working-directory: android
+        run: gradle wrapper --gradle-version 8.5
+
+      - name: Verify Gradle version
+        working-directory: android
         run: |
-          keytool -genkeypair -v -keystore cryptopulse.keystore \
-            -alias cryptopulse -keyalg RSA -keysize 2048 -validity 10000 \
-            -storepass cryptopulse -keypass cryptopulse \
-            -dname "CN=CryptoPulse, OU=Dev, O=CryptoPulse, L=Beijing, ST=Beijing, C=CN"
+          ./gradlew --version | head -3
+          echo "JAVA_HOME=$JAVA_HOME"
+
+      - name: Generate Keystore
+        working-directory: android
+        run: |
+          keytool -genkey -v \
+            -keystore app/release.keystore \
+            -alias release \
+            -keyalg RSA -keysize 2048 -validity 10000 \
+            -storepass android -keypass android \
+            -dname "CN=App,O=App,C=CN" \
+            -noprompt
+          cat > app/keystore.properties << 'EOF'
+          storeFile=release.keystore
+          storePassword=android
+          keyAlias=release
+          keyPassword=android
+          EOF
 
       - name: Build Release APK
         working-directory: android
-        run: gradle assembleRelease
+        run: ./gradlew assembleRelease
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
