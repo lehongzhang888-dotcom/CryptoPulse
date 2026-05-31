@@ -139,7 +139,14 @@ setTimeout(function(){
 }, 500);
 
 function apiFetch(url){
-  if(isNative){try{return JSON.parse(NativeAPI.rawFetch(url));}catch(e){}}
+  if(isNative){
+    try {
+      var data = JSON.parse(NativeAPI.rawFetch(url));
+      return Promise.resolve(data);
+    } catch(e) {
+      return Promise.reject(e);
+    }
+  }
   return fetch(url).then(function(r){return r.json();});
 }
 
